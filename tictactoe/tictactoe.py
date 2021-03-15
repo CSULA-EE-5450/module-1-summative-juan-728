@@ -7,14 +7,6 @@ import numpy as np
 TicTacToe_INSTRUCTIONS = {
     'English': {
         'WELCOME': 'Welcome to Tic-Tac-Toe! :D',
-        # 'NUM_PLAYERS': 'How many players? ',
-        # 'NUM_DECKS': 'How many decks? ',
-        # 'START': 'Starting game... ',
-        # 'PLAYER_INST': 'Type h to hit or s to stay.',
-        # 'PLAYER_HIT': 'Chose to hit and drew',
-        # 'PLAYER_STAY': 'Chose to Stay.',
-        # 'DEALER_HIT': 'Dealer hit and drew a',
-        # 'DEALER_STAY': 'Dealer stays at',
         'PLAY_AGAIN': 'Type y to play another game: '
     }
 }
@@ -22,13 +14,11 @@ TicTacToe_INSTRUCTIONS = {
 
 @dataclass
 class TicTacToe(object):
-    """ TicTacToe game object.
+    """ TicTacToe game
     """
-
     def __init__(self, num_player: int = 2):
         """
         Constructor for the TicTacToe game object.
-
         """
 
         self._VALUES = [' ' for x in range(9)]
@@ -40,12 +30,12 @@ class TicTacToe(object):
         self._CUR_SIGN = ''
 
     def initial_setup(self):
-        print("Player 1")
-        self._PLAYER1 = input("Enter the name : ")
+        print("Player 1 - ")
+        self._PLAYER1 = input("Enter the name: ")
         print("\n")
 
-        print("Player 2")
-        self._PLAYER2 = input("Enter the name : ")
+        print("Player 2 - ")
+        self._PLAYER2 = input("Enter the name: ")
         print("\n")
 
         self._CUR_PLAYER_NAME = self._PLAYER1
@@ -62,7 +52,7 @@ class TicTacToe(object):
             try:
                 choice = int(input())
             except ValueError:
-                print("Invalid Input!Try Again! :D \n")
+                print("Invalid Input!Try Again! :( \n")
                 continue
 
             if choice == 1:
@@ -149,7 +139,7 @@ class TicTacToe(object):
             return True
         return False
 
-    def check_win(self):
+    def check_winner(self):
         win_cond = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7], [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]]
         for x in win_cond:
             if all(y in (self._PLAYER_POS[self._CUR_SIGN]) for y in x):
@@ -163,8 +153,8 @@ class TicTacToe(object):
         while True:
             self.player_move_exe()
 
-            if self.check_win():
-                print("Player ", self._CUR_PLAYER_NAME, " has won the game! :D")
+            if self.check_winner():
+                print(" ", self._CUR_PLAYER_NAME, " has won the game! :D")
                 print("\n")
                 break
             if self.check_draw():

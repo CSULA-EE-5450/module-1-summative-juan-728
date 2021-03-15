@@ -9,8 +9,7 @@ from tictactoe.tictactoe import TicTacToe
 
 @dataclass
 class TicTacToeInfo:
-    num_players: int
-    owner: str
+    game_uuid: str
     players: List[str]
     termination_password: str
 
@@ -22,26 +21,20 @@ class AsyncTicTacToeDB(object):
         self._QUERY_TIME: float = 0.05
         self._user_db = user_db  # pointer to the Web API's UserDB
 
-    async def add_game(self, num_players: int, owner: str,
-                       num_decks: int = 2) -> Tuple[str, str, str]:
+    async def add_game(self) -> Tuple[str, str]:
         """
         Asks the database to create a new game.
 
-        :param num_players: number of players
-        :param owner: username of the owner of the game
-        :param num_decks: number of decks to use, default 2
         :return: the UUID (universally-unique ID) of the game, termination password, and owner username
         """
         await asyncio.sleep(self._QUERY_TIME)  # simulate query time
         game_uuid = str(uuid4())
         game_term_password = str(uuid4())
-        self._current_games[game_uuid] = TicTacToe(num_decks, num_players)
+        self._current_games[game_uuid] = TicTacToe()
         self._current_games_info[game_uuid] = TicTacToeInfo(
-            num_players,
-            owner,
             list(),
             game_term_password)
-        return game_uuid, game_term_password, owner
+        return game_uuid, game_term_password
 
     async def get_game_info(self, game_id: str):
         """
@@ -52,21 +45,21 @@ class AsyncTicTacToeDB(object):
         """
         return self._current_games_info[game_id]
 
-    async def add_player(self, game_id: str, username: str, test_owner: str):
-        if (not self._current_games_info[game_id].max_users) and (self._current_games[game_id].owner == test_owner):
-            self._current_games_info[game_id].num_players += 1
+    async def add_player(self, game_id: str, username: str):
+        if not self._current_games_info[game_id].players:
+            self._current_games_info[game_id].players += 1
             self._current_games_info[game_id].players.append(username)
-            self._current_games[game_id].num_players = self._current_games_info[game_id].num_players
-        return self._current_games[game_id].num_players
+            self._current_games[game_id].players = self._current_games_info[game_id].players
+        return self._current_games[game_id].players
 
-    async def list_games(self) -> List[Tuple[str, int]]:
+    async def list_games(self) -> List[str]:
         """
         Asks the database for a list of all active games.
 
         :return: list of (game_id, number of players in game)
         """
         await asyncio.sleep(self._QUERY_TIME)  # simulate query time
-        return [(game_id, game.num_players) for game_id, game in self._current_games.items()]
+        return [game_id for game_id, game in self._current_games.items()]
 
     async def get_game(self, game_id: str) -> Union[TicTacToe, None]:
         """
@@ -78,19 +71,17 @@ class AsyncTicTacToeDB(object):
         await asyncio.sleep(self._QUERY_TIME)  # simulate query time
         return self._current_games.get(game_id, None)
 
-    async def del_game(self, game_id: str, term_pass: str, attempter: str) -> bool:
+    async def del_game(self, game_id: str, term_pass: str) -> bool:
         """
         Asks the database to terminate a specific game.
 
         :param game_id: the UUID of the specific game
         :param term_pass: the termination password for the game
-        :param attempter: the username of the person attempting the delete
         :return: False or exception if not found, True if success
         """
         try:
             await asyncio.sleep(self._QUERY_TIME)  # simulate query time
-            if self._current_games_info[game_id].termination_password == term_pass \
-                    and self._current_games_info[game_id].owner == attempter:
+            if self._current_games_info[game_id].termination_password == term_pass:
                 del self._current_games[game_id]
                 return True
             else:

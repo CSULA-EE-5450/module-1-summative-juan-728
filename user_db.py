@@ -1,6 +1,8 @@
 from typing import Tuple, Dict
 import secrets
 import nacl.pwhash
+import nacl.exceptions
+from fastapi import HTTPException, status
 
 
 class UserDB(object):
@@ -11,39 +13,33 @@ class UserDB(object):
         """
         Creates a user and returns a automatically-generated token (password)
         for the user.  You can generate this token using secrets.token_urlsafe()
-
         :raises: ValueError if the username already exists
         :param username: desired username
         :return: (username, password_token)
         """
-
-        if username == self._accounts:
-            raise ValueError("Username already exist")
-
-        passtoken = (secrets.token_urlsafe())
-        passtoken_byte = str.encode(passtoken)
-        self._accounts[username] = nacl.pwhash.str(passtoken_byte)
-
-        return username, passtoken
-        pass
+        if username not in self._accounts:
+            password = secrets.token_urlsafe()  # password.encode('utf-8')
+            hash_password = nacl.pwhash.str(bytes(password, 'utf-8'))
+            self._accounts[username] = hash_password
+            return username, password
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"username {username} is taken.")
 
     def is_valid(self, username: str, password) -> bool:
         """
         Check whether the given username and password match a user
         present in the UserDB.  The hash of the input password is
         compared to the stored hash.
-
-        See what you can call in nacl.pwhash to verify an input password.
-
+        See what you can call in nacl.pwhash.verify to verify an input password.
         :param username:
         :param password:
         :return: True if the credentials are valid, False if not.
         """
-        password_bytes = str.encode(password)
-
-        try:
-            if username in self._accounts.keys() and nacl.pwhash.verify(self._accounts[username], password_bytes):
-                return True
-        except:
+        if username in self._accounts:
+            try:
+                return nacl.pwhash.verify(self._accounts[username], password.encode('utf-8'))
+            except nacl.exceptions.InvalidkeyError:
+                return False
+        else:
             return False
-        pass
